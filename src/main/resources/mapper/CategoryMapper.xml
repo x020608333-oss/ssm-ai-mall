@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.dao.CategoryMapper">
+
+    <resultMap id="BaseMap" type="Category">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="icon" property="icon"/>
+        <result column="sort" property="sort"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO category (name, icon, sort, status)
+        VALUES (#{name}, #{icon}, #{sort}, #{status})
+    </insert>
+
+    <update id="update">
+        UPDATE category
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM category WHERE id = #{id}
+    </delete>
+
+    <select id="findAll" resultMap="BaseMap">
+        SELECT * FROM category ORDER BY sort ASC, id ASC
+    </select>
+
+    <select id="findById" resultMap="BaseMap">
+        SELECT * FROM category WHERE id = #{id}
+    </select>
+
+    <select id="countProduct" resultType="int">
+        SELECT COUNT(*) FROM product WHERE category_id = #{id}
+    </select>
+</mapper>

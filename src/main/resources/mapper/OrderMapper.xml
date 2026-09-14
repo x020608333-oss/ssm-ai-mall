@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.dao.OrderMapper">
+
+    <resultMap id="BaseMap" type="Order">
+        <id column="id" property="id"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="user_id" property="userId"/>
+        <result column="username" property="username"/>
+        <result column="total_amount" property="totalAmount"/>
+        <result column="status" property="status"/>
+        <result column="receiver" property="receiver"/>
+        <result column="phone" property="phone"/>
+        <result column="address_snapshot" property="addressSnapshot"/>
+        <result column="remark" property="remark"/>
+        <result column="pay_time" property="payTime"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!--
+        订单列表：只查订单主表（可分页）。
+        明细由业务层用 OrderItemMapper.findByOrderIds 批量填充，
+        避免 JOIN 嵌套集合在 PageHelper 分页下产生的总数错位问题。
+    -->
+    <select id="findByUser" resultMap="BaseMap">
+        SELECT o.* FROM orders o
+        WHERE o.user_id = #{userId}
+        <if test="status != null">
+            AND o.status = #{status}
+        </if>
+        ORDER BY o.id DESC
+    </select>
+
+    <select id="findList" resultMap="BaseMap">
+        SELECT o.*, u.username
+        FROM orders o
+        JOIN `user` u ON o.user_id = u.id
+        <where>
+            <if test="status != null">
+                AND o.status = #{status}
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+            </if>
+        </where>
+        ORDER BY o.id DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (order_no, user_id, total_amount, status, receiver, phone, address_snapshot, remark)
+        VALUES (#{orderNo}, #{userId}, #{totalAmount}, #{status}, #{receiver}, #{phone}, #{addressSnapshot}, #{remark})
+    </insert>
+
+    <!-- 乐观思想的状态流转：只有当前状态匹配才允许变更，防止重复操作 -->
+    <update id="updateStatus">
+        UPDATE orders SET status = #{to} WHERE order_no = #{orderNo} AND status = #{from}
+    </update>
+
+    <update id="paySuccess">
+        UPDATE orders SET status = 1, pay_time = NOW() WHERE order_no = #{orderNo} AND status = 0
+    </update>
+
+    <select id="findById" resultMap="BaseMap">
+        SELECT * FROM orders WHERE id = #{id}
+    </select>
+
+    <select id="findByOrderNo" resultMap="BaseMap">
+        SELECT * FROM orders WHERE order_no = #{orderNo}
+    </select>
+
+    <select id="findByOrderNoAndUser" resultMap="BaseMap">
+        SELECT * FROM orders WHERE order_no = #{orderNo} AND user_id = #{userId}
+    </select>
+
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*) FROM orders
+        <where>
+            <if test="status != null">
+                status = #{status}
+            </if>
+        </where>
+    </select>
+</mapper>

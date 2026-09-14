@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.dao.BehaviorLogMapper">
+
+    <resultMap id="BaseMap" type="BehaviorLog">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="product_id" property="productId"/>
+        <result column="type" property="type"/>
+        <result column="score" property="score"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <!-- 聚合查询专用：product_id + 协同分 + 参与用户数 -->
+    <resultMap id="AggMap" type="BehaviorLog">
+        <result column="product_id" property="productId"/>
+        <result column="agg_score" property="aggScore"/>
+        <result column="agg_users" property="aggUsers"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO behavior_log (user_id, product_id, type, score)
+        VALUES (#{userId}, #{productId}, #{type}, #{score})
+    </insert>
+
+    <select id="findRecentByUser" resultMap="BaseMap">
+        SELECT * FROM behavior_log
+        WHERE user_id = #{userId}
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!--
+        ItemCF 协同过滤候选集（基于物品的协同过滤）：
+        JOIN 条件是 user_id —— 同一用户交互过的商品对（X,Y) 记一次共现，
+        从而统计与目标用户所购商品"被同一批人共同购买"的其他商品。
+        agg_score = 共现加权分；agg_users = 参与的共现用户数。
+    -->
+    <select id="findCoOccurrence" resultMap="AggMap">
+        SELECT b2.product_id,
+               SUM(b2.score) AS agg_score,
+               COUNT(DISTINCT b1.user_id) AS agg_users
+        FROM behavior_log b1
+        JOIN behavior_log b2
+          ON b1.user_id = b2.user_id
+         AND b2.product_id != b1.product_id
+         AND b1.user_id != #{excludeUserId}
+        WHERE b1.product_id IN
+        <foreach collection="productIds" item="pid" open="(" separator="," close=")">
+            #{pid}
+        </foreach>
+        GROUP BY b2.product_id
+        ORDER BY agg_score DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findTopProducts" resultMap="AggMap">
+        SELECT product_id, SUM(score) AS agg_score
+        FROM behavior_log
+        WHERE created_at &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        GROUP BY product_id
+        ORDER BY agg_score DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

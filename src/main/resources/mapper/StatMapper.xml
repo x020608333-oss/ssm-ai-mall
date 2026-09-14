@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.dao.StatMapper">
+
+    <select id="todayOrderCount" resultType="int">
+        SELECT COUNT(*) FROM orders WHERE created_at &gt;= CURDATE()
+    </select>
+
+    <select id="todaySales" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(total_amount), 0) FROM orders
+        WHERE created_at &gt;= CURDATE() AND status IN (1, 2, 3)
+    </select>
+
+    <select id="userCount" resultType="int">
+        SELECT COUNT(*) FROM `user`
+    </select>
+
+    <select id="unpaidCount" resultType="int">
+        SELECT COUNT(*) FROM orders WHERE status = 0
+    </select>
+
+    <select id="dailyStats" resultType="map">
+        SELECT
+            DATE_FORMAT(d.date, '%m-%d') AS `date`,
+            IFNULL(SUM(o.total_amount), 0) AS amount,
+            COUNT(o.id) AS cnt
+        FROM (
+            SELECT DATE_SUB(CURDATE(), INTERVAL n DAY) AS date
+            FROM (
+                SELECT 0 AS n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3
+                UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
+            ) t
+        ) d
+        LEFT JOIN orders o ON DATE(o.created_at) = d.date
+        GROUP BY d.date
+        ORDER BY d.date ASC
+    </select>
+
+    <select id="categoryStats" resultType="map">
+        SELECT c.name AS name, COUNT(oi.id) AS cnt
+        FROM order_item oi
+        JOIN product p ON oi.product_id = p.id
+        JOIN category c ON p.category_id = c.id
+        GROUP BY c.name
+        ORDER BY cnt DESC
+    </select>
+</mapper>

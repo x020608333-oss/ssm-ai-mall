@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.dao.ProductMapper">
+
+    <resultMap id="BaseMap" type="Product">
+        <id column="id" property="id"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="category_name" property="categoryName"/>
+        <result column="name" property="name"/>
+        <result column="subtitle" property="subtitle"/>
+        <result column="main_image" property="mainImage"/>
+        <result column="price" property="price"/>
+        <result column="stock" property="stock"/>
+        <result column="sales" property="sales"/>
+        <result column="detail" property="detail"/>
+        <result column="is_hot" property="isHot"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <sql id="List_Columns">
+        p.id, p.category_id, c.name AS category_name, p.name, p.subtitle, p.main_image,
+        p.price, p.stock, p.sales, p.is_hot, p.status, p.created_at
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO product (category_id, name, subtitle, main_image, price, stock, sales, detail, is_hot, status)
+        VALUES (#{categoryId}, #{name}, #{subtitle}, #{mainImage}, #{price}, #{stock},
+                #{sales}, #{detail}, #{isHot}, #{status})
+    </insert>
+
+    <update id="update">
+        UPDATE product
+        <set>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="subtitle != null">subtitle = #{subtitle},</if>
+            <if test="mainImage != null">main_image = #{mainImage},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="stock != null">stock = #{stock},</if>
+            <if test="detail != null">detail = #{detail},</if>
+            <if test="isHot != null">is_hot = #{isHot},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM product WHERE id = #{id}
+    </delete>
+
+    <select id="findById" resultMap="BaseMap">
+        SELECT p.*, c.name AS category_name
+        FROM product p LEFT JOIN category c ON p.category_id = c.id
+        WHERE p.id = #{id}
+    </select>
+
+    <!-- 动态SQL核心：多条件商品查询 + 白名单排序 -->
+    <select id="findList" resultMap="BaseMap">
+        SELECT <include refid="List_Columns"/>
+        FROM product p LEFT JOIN category c ON p.category_id = c.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (p.name LIKE CONCAT('%', #{keyword}, '%') OR p.subtitle LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+            <if test="hot != null">
+                AND p.is_hot = #{hot}
+            </if>
+        </where>
+        <choose>
+            <when test="orderBy == 'priceAsc'">ORDER BY p.price ASC</when>
+            <when test="orderBy == 'priceDesc'">ORDER BY p.price DESC</when>
+            <when test="orderBy == 'salesDesc'">ORDER BY p.sales DESC</when>
+            <otherwise>ORDER BY p.id DESC</otherwise>
+        </choose>
+    </select>
+
+    <select id="findHot" resultMap="BaseMap">
+        SELECT <include refid="List_Columns"/>
+        FROM product p LEFT JOIN category c ON p.category_id = c.id
+        WHERE p.status = 1 AND p.is_hot = 1
+        ORDER BY p.sales DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findByIds" resultMap="BaseMap">
+        SELECT <include refid="List_Columns"/>
+        FROM product p LEFT JOIN category c ON p.category_id = c.id
+        WHERE p.id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM product
+    </select>
+
+    <!-- 防超卖：条件更新 -->
+    <update id="reduceStock">
+        UPDATE product
+        SET stock = stock - #{quantity}
+        WHERE id = #{id} AND status = 1 AND stock &gt;= #{quantity}
+    </update>
+
+    <update id="addStock">
+        UPDATE product SET stock = stock + #{quantity} WHERE id = #{id}
+    </update>
+
+    <update id="increaseSales">
+        UPDATE product SET sales = sales + #{quantity} WHERE id = #{id}
+    </update>
+
+    <update id="decreaseSales">
+        UPDATE product SET sales = GREATEST(sales - #{quantity}, 0) WHERE id = #{id}
+    </update>
+
+    <select id="findLowStock" resultMap="BaseMap">
+        SELECT <include refid="List_Columns"/>
+        FROM product p LEFT JOIN category c ON p.category_id = c.id
+        WHERE p.stock &lt;= #{threshold}
+        ORDER BY p.stock ASC
+        LIMIT 10
+    </select>
+
+    <select id="searchByName" resultMap="BaseMap">
+        SELECT <include refid="List_Columns"/>
+        FROM product p LEFT JOIN category c ON p.category_id = c.id
+        WHERE p.status = 1 AND p.name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY p.sales DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findCheaper" resultMap="BaseMap">
+        SELECT <include refid="List_Columns"/>
+        FROM product p LEFT JOIN category c ON p.category_id = c.id
+        WHERE p.status = 1
+        <if test="keyword != null and keyword != ''">
+            AND p.name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="price != null">
+            AND p.price &lt;= #{price}
+        </if>
+        ORDER BY p.price ASC
+        LIMIT #{limit}
+    </select>
+</mapper>

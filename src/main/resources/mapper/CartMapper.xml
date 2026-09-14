@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.dao.CartMapper">
+
+    <resultMap id="BaseMap" type="Cart">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="product_id" property="productId"/>
+        <result column="quantity" property="quantity"/>
+        <result column="checked" property="checked"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="product_name" property="productName"/>
+        <result column="price" property="price"/>
+        <result column="stock" property="stock"/>
+        <result column="main_image" property="mainImage"/>
+        <result column="product_status" property="productStatus"/>
+    </resultMap>
+
+    <!-- ON DUPLICATE KEY UPDATE：唯一索引(user_id, product_id)，重复加购自动累加数量 -->
+    <insert id="insertOrUpdate">
+        INSERT INTO cart (user_id, product_id, quantity, checked)
+        VALUES (#{userId}, #{productId}, #{quantity}, 1)
+        ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity), checked = 1
+    </insert>
+
+    <!-- 购物车列表：连商品表取最新价格/库存/上架状态 -->
+    <select id="findByUser" resultMap="BaseMap">
+        SELECT ct.id, ct.user_id, ct.product_id, ct.quantity, ct.checked, ct.created_at,
+               p.name AS product_name, p.price, p.stock, p.main_image, p.status AS product_status
+        FROM cart ct
+        JOIN product p ON ct.product_id = p.id
+        WHERE ct.user_id = #{userId}
+        ORDER BY ct.id DESC
+    </select>
+
+    <select id="findByIdAndUser" resultMap="BaseMap">
+        SELECT * FROM cart WHERE id = #{id} AND user_id = #{userId}
+    </select>
+
+    <select id="findByUserAndProduct" resultMap="BaseMap">
+        SELECT * FROM cart WHERE user_id = #{userId} AND product_id = #{productId}
+    </select>
+
+    <update id="updateQuantity">
+        UPDATE cart SET quantity = #{quantity} WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <update id="updateChecked">
+        UPDATE cart SET checked = #{checked} WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <update id="checkAll">
+        UPDATE cart SET checked = #{checked} WHERE user_id = #{userId}
+    </update>
+
+    <delete id="deleteByIdAndUser">
+        DELETE FROM cart WHERE id = #{id} AND user_id = #{userId}
+    </delete>
+
+    <delete id="deleteCheckedByUser">
+        DELETE FROM cart WHERE user_id = #{userId} AND checked = 1
+    </delete>
+
+    <select id="countByUser" resultType="int">
+        SELECT IFNULL(SUM(quantity), 0) FROM cart WHERE user_id = #{userId}
+    </select>
+</mapper>
