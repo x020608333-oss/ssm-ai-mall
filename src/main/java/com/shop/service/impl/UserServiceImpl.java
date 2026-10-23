@@ -4,15 +4,14 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.shop.common.BizException;
 import com.shop.common.PageResult;
+import com.shop.common.PasswordUtil;
 import com.shop.dao.UserMapper;
 import com.shop.entity.User;
 import com.shop.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Service
@@ -34,7 +33,7 @@ public class UserServiceImpl implements UserService {
         }
         User user = new User();
         user.setUsername(username);
-        user.setPassword(md5(password));
+        user.setPassword(PasswordUtil.hash(password));
         user.setNickname(StringUtils.hasText(nickname) ? nickname : username);
         user.setRole("user");
         user.setStatus(1);
@@ -44,11 +43,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public User login(String username, String password) {
         User user = userMapper.findByUsername(username);
-        if (user == null || !user.getPassword().equals(md5(password))) {
+        if (user == null || !PasswordUtil.verify(password, user.getPassword())) {
             throw new BizException("用户名或密码错误");
         }
         if (user.getStatus() == 0) {
             throw new BizException("账号已被禁用，请联系管理员");
+        }
+        // 历史 MD5 数据在登录成功后自动升级为 PBKDF2
+        if (!PasswordUtil.isModern(user.getPassword())) {
+            userMapper.updatePassword(user.getId(), PasswordUtil.hash(password));
         }
         user.setPassword(null);
         return user;
@@ -76,13 +79,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updatePassword(Long id, String oldPwd, String newPwd) {
         User user = userMapper.findById(id);
-        if (user == null || !user.getPassword().equals(md5(oldPwd))) {
+        if (user == null || !PasswordUtil.verify(oldPwd, user.getPassword())) {
             throw new BizException("原密码错误");
         }
         if (!StringUtils.hasText(newPwd) || newPwd.length() < 6) {
             throw new BizException("新密码至少6位");
         }
-        userMapper.updatePassword(id, md5(newPwd));
+        userMapper.updatePassword(id, PasswordUtil.hash(newPwd));
     }
 
     @Override
@@ -102,9 +105,5 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updateRole(Long id, String role) {
         userMapper.updateRole(id, role);
-    }
-
-    private String md5(String raw) {
-        return DigestUtils.md5DigestAsHex(raw.getBytes(StandardCharsets.UTF_8));
     }
 }

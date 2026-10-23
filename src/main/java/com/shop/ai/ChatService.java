@@ -52,6 +52,13 @@ public class ChatService {
             // 2. 大模型（带历史上下文与商品库提示词）
             List<ChatMessage> history = chatMessageMapper.findRecent(sessionId, HISTORY_LIMIT);
             Collections.reverse(history);
+            // findRecent 已经包含刚入库的本轮 user 消息，传给 LLM 前去掉，避免同一句话出现两次
+            if (!history.isEmpty()) {
+                ChatMessage last = history.get(history.size() - 1);
+                if ("user".equals(last.getRole()) && userMsg.equals(last.getContent())) {
+                    history.remove(history.size() - 1);
+                }
+            }
             String llm = llmClient.chat(systemPrompt(), history, userMsg);
             if (llm != null) {
                 answer = llm;

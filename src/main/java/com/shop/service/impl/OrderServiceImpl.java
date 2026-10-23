@@ -112,13 +112,6 @@ public class OrderServiceImpl implements OrderService {
             if (rows == 0) {
                 throw new BizException("商品【" + item.getProductName() + "】库存不足，下单失败");
             }
-            // 行为日志：购买
-            BehaviorLog blog = new BehaviorLog();
-            blog.setUserId(order.getUserId());
-            blog.setProductId(item.getProductId());
-            blog.setType(BehaviorLog.TYPE_BUY);
-            blog.setScore(5);
-            behaviorLogMapper.insert(blog);
         }
 
         log.info("订单创建成功 orderNo={} userId={} amount={} items={}",
@@ -160,6 +153,20 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public boolean paySuccessForUser(String orderNo, Long userId) {
+        Order order = orderMapper.findByOrderNoAndUser(orderNo, userId);
+        if (order == null) {
+            return false;
+        }
+        if (order.getStatus() != null && order.getStatus() != Order.STATUS_UNPAID) {
+            return true; // 幂等：已支付/已关闭的订单直接视为成功，不重复加销量
+        }
+        paySuccess(orderNo);
+        return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void paySuccess(String orderNo) {
         // 状态条件更新：只有"待支付"才能变成"已支付"，幂等，重复回调不会重复扣
         int rows = orderMapper.paySuccess(orderNo);
@@ -169,6 +176,13 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderMapper.findByOrderNo(orderNo);
         for (OrderItem item : orderItemMapper.findByOrderId(order.getId())) {
             productMapper.increaseSales(item.getProductId(), item.getQuantity());
+            // 购买行为只在支付成功后记录；下单未支付不应污染推荐数据
+            BehaviorLog blog = new BehaviorLog();
+            blog.setUserId(order.getUserId());
+            blog.setProductId(item.getProductId());
+            blog.setType(BehaviorLog.TYPE_BUY);
+            blog.setScore(5);
+            behaviorLogMapper.insert(blog);
         }
         log.info("订单支付成功 orderNo={}", orderNo);
     }

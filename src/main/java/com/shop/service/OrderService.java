@@ -16,6 +16,9 @@ public interface OrderService {
     /** 支付成功回调（模拟第三方支付网关通知） */
     void paySuccess(String orderNo);
 
+    /** 模拟支付回调：校验订单归属（前端登录用户）后再置为已支付。 */
+    boolean paySuccessForUser(String orderNo, Long userId);
+
     /** 用户取消待支付订单：归还库存 */
     void cancel(Long userId, String orderNo);
 

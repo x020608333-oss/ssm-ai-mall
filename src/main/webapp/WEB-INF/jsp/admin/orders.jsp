@@ -77,16 +77,14 @@
 
 <jsp:include page="common/footer.jsp"/>
 <script>
-    var ORDERS = {};
-    <c:forEach items="${pageResult.list}" var="order">
-    ORDERS['${order.orderNo}'] = {
-        orderNo: '${order.orderNo}', username: '${order.username}', totalAmount: '${order.totalAmount}',
-        status: '${order.status}', receiver: '${order.receiver}', phone: '${order.phone}',
-        address: '${order.addressSnapshot}', createdAt: '${order.createdAt}', payTime: '${order.payTime}',
-        items: [<c:forEach items="${order.items}" var="it" varStatus="s">{name: '${it.productName}', price: '${it.price}', qty: '${it.quantity}', subtotal: '${it.subtotal}'}<c:if test="${not s.last}">,</c:if></c:forEach>]
-    };
-    </c:forEach>
+    var ORDERS = ${ordersJson};
     var ST_TXT = {0: '待支付', 1: '已支付待发货', 2: '已发货', 3: '已完成', 5: '已取消', 6: '已关闭'};
+    // 所有动态字段先做 HTML 转义，再拼 innerHTML（收货人/地址等来自用户输入）
+    function esc(v) {
+        return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+        });
+    }
     function search() {
         var url = CTX + '/admin/orders?page=1';
         if (document.getElementById('kwOrder').value) url += '&orderNo=' + encodeURIComponent(document.getElementById('kwOrder').value);
@@ -99,15 +97,15 @@
     }
     function showDetail(no) {
         var o = ORDERS[no];
-        var html = '<b>订单号：</b>' + o.orderNo + '（' + ST_TXT[o.status] + '）<br>' +
-            '<b>下单人：</b>' + o.username + '　<b>下单时间：</b>' + o.createdAt + '<br>' +
-            (o.payTime ? '<b>支付时间：</b>' + o.payTime + '<br>' : '') +
-            '<b>收货：</b>' + o.receiver + '　' + o.phone + '<br>' +
-            '<b>地址：</b>' + o.address + '<hr style="border-color:#f0f0f0">';
+        var html = '<b>订单号：</b>' + esc(o.orderNo) + '（' + esc(ST_TXT[o.status] || o.status) + '）<br>' +
+            '<b>下单人：</b>' + esc(o.username) + '　<b>下单时间：</b>' + esc(o.createdAt) + '<br>' +
+            (o.payTime ? '<b>支付时间：</b>' + esc(o.payTime) + '<br>' : '') +
+            '<b>收货：</b>' + esc(o.receiver) + '　' + esc(o.phone) + '<br>' +
+            '<b>地址：</b>' + esc(o.address) + '<hr style="border-color:#f0f0f0">';
         o.items.forEach(function (it) {
-            html += it.name + '　¥' + it.price + ' × ' + it.qty + ' = <b>¥' + it.subtotal + '</b><br>';
+            html += esc(it.name) + '　¥' + esc(it.price) + ' × ' + esc(it.qty) + ' = <b>¥' + esc(it.subtotal) + '</b><br>';
         });
-        html += '<div style="text-align:right;margin-top:8px;font-size:16px">实付款：<span style="color:#ff5000;font-weight:700">¥' + o.totalAmount + '</span></div>';
+        html += '<div style="text-align:right;margin-top:8px;font-size:16px">实付款：<span style="color:#ff5000;font-weight:700">¥' + esc(o.totalAmount) + '</span></div>';
         document.getElementById('detailBody').innerHTML = html;
         document.getElementById('detailMask').classList.add('show');
     }

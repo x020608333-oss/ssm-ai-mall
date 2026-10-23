@@ -144,13 +144,22 @@ public class OrderController {
 
     /**
      * 模拟第三方支付网关的支付成功回调。
-     * 真实场景中由支付网关POST本接口，需要验签；这里直接信任 orderNo。
+     * 演示环境用登录会话 + 订单归属校验兜底；真实支付网关回调没有用户会话，
+     * 上线时必须改为网关验签（金额、商户号、签名）并做幂等处理。
      */
     @PostMapping("/api/pay/notify")
     @ResponseBody
-    public Result<Void> payNotify(@RequestBody Map<String, String> body) {
-        orderService.paySuccess(body.get("orderNo"));
-        return Result.ok();
+    public Result<Void> payNotify(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        User user = WebUtil.getLoginUser(request);
+        if (user == null) {
+            return Result.error(401, "请先登录");
+        }
+        String orderNo = body.get("orderNo");
+        if (orderNo == null || orderNo.trim().isEmpty()) {
+            return Result.error(400, "缺少订单号");
+        }
+        boolean ok = orderService.paySuccessForUser(orderNo, user.getId());
+        return ok ? Result.ok() : Result.error(403, "订单不存在或无权操作");
     }
 
     @PostMapping("/api/order/cancel")

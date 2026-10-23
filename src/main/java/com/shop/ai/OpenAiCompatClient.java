@@ -4,6 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shop.entity.ChatMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +44,15 @@ public class OpenAiCompatClient implements AiEngine {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    /** 单例 HttpClient：连接池复用 + 超时，避免每次请求新建客户端、无限等待 */
+    private final CloseableHttpClient httpClient = HttpClients.custom()
+            .setDefaultRequestConfig(RequestConfig.custom()
+                    .setConnectTimeout(5000)
+                    .setConnectionRequestTimeout(5000)
+                    .setSocketTimeout(30000)
+                    .build())
+            .build();
+
     @Override
     public String chat(String systemPrompt, List<ChatMessage> history, String userMsg) {
         if (!available()) {
@@ -59,17 +75,14 @@ public class OpenAiCompatClient implements AiEngine {
             body.put("temperature", 0.6);
             body.put("max_tokens", 500);
 
-            org.apache.http.client.methods.HttpPost post =
-                    new org.apache.http.client.methods.HttpPost(baseUrl + "/chat/completions");
+            HttpPost post = new HttpPost(baseUrl + "/chat/completions");
             post.setHeader("Content-Type", "application/json");
             post.setHeader("Authorization", "Bearer " + apiKey);
-            post.setEntity(new org.apache.http.entity.StringEntity(
+            post.setEntity(new StringEntity(
                     mapper.writeValueAsString(body), StandardCharsets.UTF_8));
 
-            try (org.apache.http.impl.client.CloseableHttpClient client =
-                         org.apache.http.impl.client.HttpClients.createDefault();
-                 org.apache.http.client.methods.CloseableHttpResponse resp = client.execute(post)) {
-                String text = org.apache.http.util.EntityUtils.toString(resp.getEntity(), StandardCharsets.UTF_8);
+            try (CloseableHttpResponse resp = httpClient.execute(post)) {
+                String text = EntityUtils.toString(resp.getEntity(), StandardCharsets.UTF_8);
                 JsonNode root = mapper.readTree(text);
                 JsonNode content = root.path("choices").path(0).path("message").path("content");
                 if (content.isMissingNode() || content.asText().isEmpty()) {
