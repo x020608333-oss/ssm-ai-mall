@@ -111,8 +111,10 @@ ssm-ai-mall
 ## 🔒 安全修复
 
 - **管理后台存储型 XSS**：订单详情不再把收货人/电话/地址直接拼进 JS 字符串；`AdminOrderController` 用 Jackson 输出 JSON（并转义 `< > &`），前端对每个动态字段再做 HTML 转义后才写入 `innerHTML`。
+- **全站 JSP 输出转义**：JSP 的 `${...}` 默认不转义，此前昵称/用户名/收货人/商品名等字段可写入脚本（注册昵称 → 管理员后台存储型 XSS），`?keyword=`、`?redirect=` 还能直接反射执行。现在所有可控文本统一走 `${fn:escapeXml(...)}`；商品/分类编辑回填数据改由 `ScriptJson` 在服务端序列化成 JSON（与订单详情同一套 `< > &` 转义），不再拼进 JS 字符串。
+- **登录后开放重定向**：`AuthController.resolveRedirect` 只接受站内绝对路径，拒绝 `//evil.com`、`/\evil.com`（浏览器把反斜杠当斜杠）以及含 TAB/换行等控制字符的路径，其余按角色回落到 `/` 或 `/admin`。
 - **支付回调越权**：`/api/pay/notify` 现在要求登录会话并校验订单归属，不能拿到 orderNo 就改任意订单；真实支付网关回调应改为验签 + 金额/商户号校验（演示接口不适用该模式）。
 - **密码散列**：新增 `PasswordUtil`，新密码使用 PBKDF2-HMAC-SHA256 + 16 字节随机盐（12 万次迭代）；历史 MD5 密码仍可登录，并在登录成功后自动升级为 PBKDF2。
 - **LLM 客户端**：HttpClient 改为单例 + 连接池，连接 5s / 读取 30s 超时，避免每次请求新建客户端且无限等待；历史消息去掉刚写入的本轮 user 消息，避免重复。
 - **推荐数据质量**：购买行为从「下单时」移到「支付成功后」记录，取消/未支付订单不再污染协同过滤数据。
-- **已知限制**：推荐共现分未归一化（热门偏置）；AI 客服默认关闭，商品检索是名称匹配而非向量 RAG；没有自动化集成测试，新增 `PasswordUtilTest` 覆盖密码散列与旧 MD5 兼容。
+- **已知限制**：推荐共现分未归一化（热门偏置）；AI 客服默认关闭，商品检索是名称匹配而非向量 RAG；没有数据库集成测试。现有 11 个 JUnit 用例：`PasswordUtilTest`（密码散列/旧 MD5 兼容）、`ScriptJsonTest`（脚本 JSON 转义与往返解析）、`AuthControllerRedirectTest`（跳转白名单）、`JspEscapingTest`（扫描全部 JSP，禁止裸 EL 输出可控文本、禁止用了 `fn:` 却不声明标签库）。JSP 另用 Jasper `JspC` 预编译验证：24 个页面 0 错误；未在浏览器里跑通完整下单流程（需要本地 MySQL 与 `jdbc.properties`）。

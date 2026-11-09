@@ -1,19 +1,20 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <jsp:include page="/WEB-INF/jsp/common/header.jsp"/>
 
 <div class="detail-wrap">
-    <img class="main-img" src="${ctx}${product.mainImage}" alt="${product.name}"
+    <img class="main-img" src="${ctx}${fn:escapeXml(product.mainImage)}" alt="${fn:escapeXml(product.name)}"
          onerror="this.src='${ctx}/static/img/placeholder.jpg'">
     <div class="detail-info">
-        <h1>${product.name}</h1>
-        <div class="sub">✨ ${product.subtitle}</div>
+        <h1>${fn:escapeXml(product.name)}</h1>
+        <div class="sub">✨ ${fn:escapeXml(product.subtitle)}</div>
         <div class="detail-price">
             <span class="price">${product.price}</span>
             <span style="color:#999;margin-left:16px;font-size:13px">销量 ${product.sales} 件</span>
         </div>
         <div class="meta">📦 库存：<b id="stockNum">${product.stock}</b> 件</div>
-        <div class="meta">🏷️ 分类：${product.categoryName}</div>
+        <div class="meta">🏷️ 分类：${fn:escapeXml(product.categoryName)}</div>
         <div class="meta">🤖 AI客服：<a href="${ctx}/chat" style="color:#6a5cff">有问题？问我就对了</a></div>
         <div class="buy-row">
             <span class="qty-ctrl">
@@ -38,7 +39,7 @@
 
 <div class="detail-desc">
     <h3 style="margin-bottom:12px">商品详情</h3>
-    ${product.detail}
+    ${fn:escapeXml(product.detail)}
 </div>
 
 <c:if test="${not empty related}">

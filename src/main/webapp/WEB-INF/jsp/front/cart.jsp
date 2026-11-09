@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <jsp:include page="/WEB-INF/jsp/common/header.jsp"/>
 
 <div class="section-title" style="margin:6px 0 14px">🛒 我的购物车</div>
@@ -19,9 +20,9 @@
                 <div class="cart-item">
                     <input type="checkbox" ${item.checked == 1 ? 'checked' : ''} class="chk"
                            data-id="${item.id}" style="width:18px;height:18px">
-                    <a href="${ctx}/product/${item.productId}"><img src="${ctx}${item.mainImage}" alt=""></a>
+                    <a href="${ctx}/product/${item.productId}"><img src="${ctx}${fn:escapeXml(item.mainImage)}" alt=""></a>
                     <div class="cname">
-                        <div>${item.productName}</div>
+                        <div>${fn:escapeXml(item.productName)}</div>
                         <c:choose>
                             <c:when test="${item.productStatus == 1}">
                                 <small style="color:#999">单价 ¥${item.price} · 库存 ${item.stock}</small>

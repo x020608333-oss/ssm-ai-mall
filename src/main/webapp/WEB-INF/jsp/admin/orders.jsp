@@ -6,7 +6,7 @@
 <jsp:include page="common/header.jsp"/>
 
 <div class="toolbar">
-    <input id="kwOrder" type="text" placeholder="搜索订单号" value="${orderNo}" style="width:240px">
+    <input id="kwOrder" type="text" placeholder="搜索订单号" value="${fn:escapeXml(orderNo)}" style="width:240px">
     <select id="statusSel">
         <option value="">全部状态</option>
         <option value="0" ${status == 0 ? 'selected' : ''}>待支付</option>
@@ -26,11 +26,11 @@
     <tbody>
     <c:forEach items="${pageResult.list}" var="order">
         <tr>
-            <td>${order.orderNo}</td>
-            <td>${order.username}</td>
+            <td>${fn:escapeXml(order.orderNo)}</td>
+            <td>${fn:escapeXml(order.username)}</td>
             <td>
                 <c:forEach items="${order.items}" var="it" varStatus="s" end="1">
-                    ${it.productName} × ${it.quantity}<c:if test="${not s.last}">；</c:if>
+                    ${fn:escapeXml(it.productName)} × ${it.quantity}<c:if test="${not s.last}">；</c:if>
                 </c:forEach>
                 <c:if test="${fn:length(order.items) > 2}">
                     等${fn:length(order.items)}件
@@ -45,9 +45,9 @@
             </td>
             <td class="ops">
                 <c:if test="${order.status == 1}">
-                    <a href="javascript:void(0)" onclick="ship('${order.orderNo}')" style="color:#52c41a">发货</a>
+                    <a href="javascript:void(0)" onclick="ship('${fn:escapeXml(order.orderNo)}')" style="color:#52c41a">发货</a>
                 </c:if>
-                <a href="javascript:void(0)" onclick="showDetail('${order.orderNo}')">详情</a>
+                <a href="javascript:void(0)" onclick="showDetail('${fn:escapeXml(order.orderNo)}')">详情</a>
             </td>
         </tr>
     </c:forEach>
@@ -59,7 +59,7 @@
 
 <c:if test="${pageResult.total > pageResult.pageSize}">
     <div class="pagination">
-        <c:set var="base" value="${ctx}/admin/orders?orderNo=${orderNo}&status=${status}&page="/>
+        <c:set var="base" value="${ctx}/admin/orders?orderNo=${fn:escapeXml(orderNo)}&status=${status}&page="/>
         <c:if test="${pageResult.pageNum > 1}"><a href="${base}${pageResult.pageNum - 1}">‹ 上一页</a></c:if>
         <span class="cur">${pageResult.pageNum} / ${pageResult.pages}</span>
         <c:if test="${pageResult.pageNum < pageResult.pages}"><a href="${base}${pageResult.pageNum + 1}">下一页 ›</a></c:if>

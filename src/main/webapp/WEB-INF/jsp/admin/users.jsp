@@ -8,7 +8,7 @@
 <jsp:include page="common/header.jsp"/>
 
 <div class="toolbar">
-    <input id="kw" type="text" placeholder="搜索用户名/昵称/手机号" value="${keyword}" style="width:240px">
+    <input id="kw" type="text" placeholder="搜索用户名/昵称/手机号" value="${fn:escapeXml(keyword)}" style="width:240px">
     <button class="btn btn-primary" onclick="search()">查询</button>
 </div>
 
@@ -22,10 +22,10 @@
     <c:forEach items="${result.list}" var="u">
         <tr>
             <td>${u.id}</td>
-            <td>${u.username}</td>
-            <td>${u.nickname}</td>
-            <td>${u.phone}</td>
-            <td>${u.email}</td>
+            <td>${fn:escapeXml(u.username)}</td>
+            <td>${fn:escapeXml(u.nickname)}</td>
+            <td>${fn:escapeXml(u.phone)}</td>
+            <td>${fn:escapeXml(u.email)}</td>
             <td><span class="tag ${u.role == 'admin' ? 'tag-purple' : 'tag-blue'}">${u.role == 'admin' ? '管理员' : '普通用户'}</span></td>
             <td>${u.createdAt}</td>
             <td><span class="tag ${u.status == 1 ? 'tag-green' : 'tag-red'}">${u.status == 1 ? '正常' : '禁用'}</span></td>
@@ -43,7 +43,7 @@
 
 <c:if test="${result.total > result.pageSize}">
     <div class="pagination">
-        <c:set var="base" value="${ctx}/admin/users?keyword=${keyword}&page="/>
+        <c:set var="base" value="${ctx}/admin/users?keyword=${fn:escapeXml(keyword)}&page="/>
         <c:if test="${result.pageNum > 1}"><a href="${base}${result.pageNum - 1}">‹ 上一页</a></c:if>
         <span class="cur">${result.pageNum} / ${result.pages}</span>
         <c:if test="${result.pageNum < result.pages}"><a href="${base}${result.pageNum + 1}">下一页 ›</a></c:if>

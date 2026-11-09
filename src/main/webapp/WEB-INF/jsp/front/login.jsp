@@ -7,7 +7,7 @@
 <div class="form-page">
     <h2>登录智选商城</h2>
     <div class="err-tip" id="errTip"></div>
-    <input type="hidden" id="redirect" value="${param.redirect}">
+    <input type="hidden" id="redirect" value="${fn:escapeXml(param.redirect)}">
     <div class="form-item">
         <label>用户名</label>
         <input id="username" type="text" placeholder="3~20位用户名">

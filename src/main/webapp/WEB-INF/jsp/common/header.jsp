@@ -16,7 +16,7 @@
     <div class="container">
         <a class="logo" href="${ctx}/">智选<span class="ai">AI</span>商城</a>
         <form class="search-box" action="${ctx}/search" method="get">
-            <input type="text" name="keyword" placeholder="搜索商品，如：手机 / 跑鞋 / 坚果" value="${param.keyword}">
+            <input type="text" name="keyword" placeholder="搜索商品，如：手机 / 跑鞋 / 坚果" value="${fn:escapeXml(param.keyword)}">
             <button type="submit">搜索</button>
         </form>
         <nav class="nav-links">
@@ -30,7 +30,7 @@
                             <a href="${ctx}/admin" style="color:#6a5cff;font-weight:600">⚙️ 管理后台</a>
                         </c:when>
                     </c:choose>
-                    <a href="${ctx}/#" onclick="return false" title="欢迎回来">👤 ${sessionScope.loginUser.nickname}</a>
+                    <a href="${ctx}/#" onclick="return false" title="欢迎回来">👤 ${fn:escapeXml(sessionScope.loginUser.nickname)}</a>
                     <a href="javascript:void(0)" onclick="logout()">退出</a>
                 </c:when>
                 <c:otherwise>
@@ -47,7 +47,7 @@
             <a href="${ctx}/search" class="${empty categoryId ? 'active' : ''}">全部</a>
             <c:forEach items="${categories}" var="cat">
                 <a href="${ctx}/search?categoryId=${cat.id}"
-                   class="${categoryId == cat.id ? 'active' : ''}">${cat.icon} ${cat.name}</a>
+                   class="${categoryId == cat.id ? 'active' : ''}">${fn:escapeXml(cat.icon)} ${fn:escapeXml(cat.name)}</a>
             </c:forEach>
         </div>
     </nav>

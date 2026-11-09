@@ -2,6 +2,7 @@ package com.shop.web.admin;
 
 import com.shop.common.PageResult;
 import com.shop.common.Result;
+import com.shop.common.ScriptJson;
 import com.shop.entity.Product;
 import com.shop.service.CategoryService;
 import com.shop.service.ProductService;
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 管理后台：商品管理（CRUD + 图片上传 + 分页搜索）
@@ -34,6 +37,23 @@ public class AdminProductController {
         model.addAttribute("categories", categoryService.listAll());
         model.addAttribute("keyword", keyword == null ? "" : keyword);
         model.addAttribute("categoryId", categoryId);
+        // 编辑回填数据走 JSON，避免 JSP 把商品名/详情拼进 JS 字符串（存储型 XSS）
+        Map<String, Object> editMap = new LinkedHashMap<>();
+        for (Product p : result.getList()) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", p.getId());
+            m.put("name", Objects.toString(p.getName(), ""));
+            m.put("categoryId", p.getCategoryId());
+            m.put("subtitle", Objects.toString(p.getSubtitle(), ""));
+            m.put("price", p.getPrice());
+            m.put("stock", p.getStock());
+            m.put("isHot", p.getIsHot());
+            m.put("status", p.getStatus());
+            m.put("mainImage", Objects.toString(p.getMainImage(), ""));
+            m.put("detail", Objects.toString(p.getDetail(), ""));
+            editMap.put(String.valueOf(p.getId()), m);
+        }
+        model.addAttribute("productsJson", ScriptJson.of(editMap));
         return "admin/products";
     }
 

@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <jsp:include page="/WEB-INF/jsp/common/header.jsp"/>
 
 <div class="section-title" style="margin:6px 0 14px">✅ 确认订单</div>
@@ -28,10 +29,10 @@
                         </c:if>
                         <a href="javascript:void(0)" onclick="delAddr(${addr.id});event.stopPropagation()">删除</a>
                     </div>
-                    <b>${addr.receiver}</b>　${addr.phone}
+                    <b>${fn:escapeXml(addr.receiver)}</b>　${fn:escapeXml(addr.phone)}
                     <c:if test="${addr.isDefault == 1}"><span class="def">默认</span></c:if>
                     <div style="color:#666;margin-top:4px;font-size:13px">
-                        ${addr.province} ${addr.city} ${addr.district} ${addr.detail}
+                        ${fn:escapeXml(addr.province)} ${fn:escapeXml(addr.city)} ${fn:escapeXml(addr.district)} ${fn:escapeXml(addr.detail)}
                     </div>
                 </div>
             </c:forEach>
@@ -44,9 +45,9 @@
             <div class="section-title"><span>商品清单</span></div>
             <c:forEach items="${items}" var="item">
                 <div class="cart-item" style="padding:10px 0">
-                    <img src="${ctx}${item.mainImage}" alt="">
+                    <img src="${ctx}${fn:escapeXml(item.mainImage)}" alt="">
                     <div class="cname">
-                        <div>${item.productName}</div>
+                        <div>${fn:escapeXml(item.productName)}</div>
                         <small style="color:#999">数量：${item.quantity}</small>
                     </div>
                     <div class="cprice">¥${item.price} × ${item.quantity}</div>

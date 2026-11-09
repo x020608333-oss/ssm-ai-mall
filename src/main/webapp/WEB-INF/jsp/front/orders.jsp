@@ -28,7 +28,7 @@
         <c:forEach items="${pageResult.list}" var="order">
             <div class="order-card">
                 <div class="head">
-                    <span>订单号：${order.orderNo}　下单时间：${order.createdAt}</span>
+                    <span>订单号：${fn:escapeXml(order.orderNo)}　下单时间：${order.createdAt}</span>
                     <span class="st st-${order.status}">
                         <c:choose>
                             <c:when test="${order.status == 0}">待支付</c:when>
@@ -43,9 +43,9 @@
                 <c:forEach items="${order.items}" var="item" varStatus="s">
                     <c:if test="${s.index < 3}">
                         <div class="body" style="padding:10px 20px 0">
-                            <img src="${ctx}${item.productImage}" alt="">
+                            <img src="${ctx}${fn:escapeXml(item.productImage)}" alt="">
                             <div class="oitems">
-                                <div>${item.productName}</div>
+                                <div>${fn:escapeXml(item.productName)}</div>
                                 <small style="color:#999">¥${item.price} × ${item.quantity}</small>
                             </div>
                         </div>
@@ -60,14 +60,14 @@
                         <span class="price">${order.totalAmount}</span>
                     </div>
                     <div class="ops">
-                        <a class="btn btn-ghost btn-sm" href="${ctx}/order/${order.orderNo}">订单详情</a>
+                        <a class="btn btn-ghost btn-sm" href="${ctx}/order/${fn:escapeXml(order.orderNo)}">订单详情</a>
                         <c:choose>
                             <c:when test="${order.status == 0}">
-                                <a class="btn btn-primary btn-sm" href="${ctx}/pay?orderNo=${order.orderNo}">去支付</a>
-                                <a class="btn btn-danger btn-sm" href="javascript:void(0)" onclick="cancelOrder('${order.orderNo}')">取消订单</a>
+                                <a class="btn btn-primary btn-sm" href="${ctx}/pay?orderNo=${fn:escapeXml(order.orderNo)}">去支付</a>
+                                <a class="btn btn-danger btn-sm" href="javascript:void(0)" onclick="cancelOrder('${fn:escapeXml(order.orderNo)}')">取消订单</a>
                             </c:when>
                             <c:when test="${order.status == 2}">
-                                <a class="btn btn-ai btn-sm" href="javascript:void(0)" onclick="confirmOrder('${order.orderNo}')">确认收货</a>
+                                <a class="btn btn-ai btn-sm" href="javascript:void(0)" onclick="confirmOrder('${fn:escapeXml(order.orderNo)}')">确认收货</a>
                             </c:when>
                         </c:choose>
                     </div>

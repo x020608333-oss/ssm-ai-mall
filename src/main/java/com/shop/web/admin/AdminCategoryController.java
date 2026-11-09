@@ -1,6 +1,7 @@
 package com.shop.web.admin;
 
 import com.shop.common.Result;
+import com.shop.common.ScriptJson;
 import com.shop.entity.Category;
 import com.shop.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +9,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 管理后台：分类管理
@@ -22,7 +26,20 @@ public class AdminCategoryController {
 
     @GetMapping("/categories")
     public String page(Model model) {
-        model.addAttribute("categories", categoryService.listAll());
+        List<Category> categories = categoryService.listAll();
+        model.addAttribute("categories", categories);
+        // 编辑回填数据走 JSON，避免 JSP 把分类名/图标拼进 JS 字符串（存储型 XSS）
+        Map<String, Object> editMap = new LinkedHashMap<>();
+        for (Category c : categories) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", c.getId());
+            m.put("name", Objects.toString(c.getName(), ""));
+            m.put("icon", Objects.toString(c.getIcon(), ""));
+            m.put("sort", c.getSort());
+            m.put("status", c.getStatus());
+            editMap.put(String.valueOf(c.getId()), m);
+        }
+        model.addAttribute("categoriesJson", ScriptJson.of(editMap));
         return "admin/categories";
     }
 

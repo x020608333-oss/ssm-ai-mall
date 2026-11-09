@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <c:set var="showCategories" value="true" scope="request"/>
 <jsp:include page="/WEB-INF/jsp/common/header.jsp">
     <jsp:param name="keyword" value="${keyword}"/>
@@ -10,7 +11,7 @@
     <div class="section-title">
         <span>
             <c:choose>
-                <c:when test="${not empty keyword}">“${keyword}” 的搜索结果</c:when>
+                <c:when test="${not empty keyword}">“${fn:escapeXml(keyword)}” 的搜索结果</c:when>
                 <c:when test="${not empty categoryId}">分类商品</c:when>
                 <c:otherwise>全部商品</c:otherwise>
             </c:choose>
@@ -18,10 +19,10 @@
         </span>
         <span>
             排序：
-            <a href="${ctx}/search?keyword=${keyword}&categoryId=${categoryId}&sort=default" style="${empty sort or sort=='default'?'color:#ff5000;font-weight:600':'color:#666'}">综合</a> ·
-            <a href="${ctx}/search?keyword=${keyword}&categoryId=${categoryId}&sort=salesDesc" style="${sort=='salesDesc'?'color:#ff5000;font-weight:600':'color:#666'}">销量</a> ·
-            <a href="${ctx}/search?keyword=${keyword}&categoryId=${categoryId}&sort=priceAsc" style="${sort=='priceAsc'?'color:#ff5000;font-weight:600':'color:#666'}">价格↑</a> ·
-            <a href="${ctx}/search?keyword=${keyword}&categoryId=${categoryId}&sort=priceDesc" style="${sort=='priceDesc'?'color:#ff5000;font-weight:600':'color:#666'}">价格↓</a>
+            <a href="${ctx}/search?keyword=${fn:escapeXml(keyword)}&categoryId=${categoryId}&sort=default" style="${empty sort or sort=='default'?'color:#ff5000;font-weight:600':'color:#666'}">综合</a> ·
+            <a href="${ctx}/search?keyword=${fn:escapeXml(keyword)}&categoryId=${categoryId}&sort=salesDesc" style="${sort=='salesDesc'?'color:#ff5000;font-weight:600':'color:#666'}">销量</a> ·
+            <a href="${ctx}/search?keyword=${fn:escapeXml(keyword)}&categoryId=${categoryId}&sort=priceAsc" style="${sort=='priceAsc'?'color:#ff5000;font-weight:600':'color:#666'}">价格↑</a> ·
+            <a href="${ctx}/search?keyword=${fn:escapeXml(keyword)}&categoryId=${categoryId}&sort=priceDesc" style="${sort=='priceDesc'?'color:#ff5000;font-weight:600':'color:#666'}">价格↓</a>
         </span>
     </div>
 
@@ -44,7 +45,7 @@
 
     <c:if test="${result.total > result.pageSize}">
         <div class="pagination">
-            <c:set var="base" value="${ctx}/search?keyword=${keyword}&categoryId=${categoryId}&sort=${sort}&page="/>
+            <c:set var="base" value="${ctx}/search?keyword=${fn:escapeXml(keyword)}&categoryId=${categoryId}&sort=${fn:escapeXml(sort)}&page="/>
             <c:if test="${result.pageNum > 1}"><a href="${base}${result.pageNum - 1}">‹ 上一页</a></c:if>
             <c:forEach begin="1" end="${result.pages}" var="i">
                 <c:if test="${i <= 10}">

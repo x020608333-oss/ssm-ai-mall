@@ -56,13 +56,29 @@ public class AuthController {
         Map<String, Object> data = new java.util.HashMap<>();
         data.put("nickname", user.getNickname());
         data.put("role", user.getRole());
-        String redirect = body.get("redirect");
-        if (redirect != null && !redirect.isEmpty() && redirect.startsWith("/")) {
-            data.put("redirect", redirect);
-        } else {
-            data.put("redirect", "admin".equals(user.getRole()) ? "/admin" : "/");
-        }
+        data.put("redirect", resolveRedirect(body.get("redirect"), user.getRole()));
         return Result.ok(data);
+    }
+
+    /**
+     * 只接受站内绝对路径：拒绝协议相对地址（// 与 /\，浏览器会把反斜杠当作斜杠）、外部 URL，
+     * 以及会被浏览器忽略的控制字符（"/" + TAB + "/evil.com" 等价于 "//evil.com"）。
+     */
+    static String resolveRedirect(String redirect, String role) {
+        String fallback = "admin".equals(role) ? "/admin" : "/";
+        if (redirect == null || redirect.isEmpty() || !redirect.startsWith("/")) {
+            return fallback;
+        }
+        if (redirect.startsWith("//") || redirect.startsWith("/\\")) {
+            return fallback;
+        }
+        for (int i = 0; i < redirect.length(); i++) {
+            char c = redirect.charAt(i);
+            if (c < 0x20 || c == 0x7f) {
+                return fallback;
+            }
+        }
+        return redirect;
     }
 
     @PostMapping("/api/auth/logout")

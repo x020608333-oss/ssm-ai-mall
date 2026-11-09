@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}" scope="request"/>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -29,7 +30,7 @@
         <header class="admin-top">
             <span class="title">${pageTitle}</span>
             <div class="right">
-                <span>👤 ${sessionScope.loginUser.nickname}（管理员）</span>
+                <span>👤 ${fn:escapeXml(sessionScope.loginUser.nickname)}（管理员）</span>
             </div>
         </header>
         <div class="admin-content">

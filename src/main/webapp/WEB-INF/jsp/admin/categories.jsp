@@ -20,9 +20,9 @@
     <c:forEach items="${categories}" var="cat">
         <tr>
             <td>${cat.id}</td>
-            <td style="font-size:20px">${cat.icon}</td>
-            <td>${cat.name}</td>
-            <td>${cat.sort}</td>
+            <td style="font-size:20px">${fn:escapeXml(cat.icon)}</td>
+            <td>${fn:escapeXml(cat.name)}</td>
+            <td>${fn:escapeXml(cat.sort)}</td>
             <td><span class="tag ${cat.status == 1 ? 'tag-green' : 'tag-gray'}">${cat.status == 1 ? '启用' : '禁用'}</span></td>
             <td class="ops">
                 <a href="javascript:void(0)" onclick="openEdit(${cat.id})">编辑</a>
@@ -54,10 +54,8 @@
 
 <jsp:include page="common/footer.jsp"/>
 <script>
-    var CATS = {};
-    <c:forEach items="${categories}" var="cat">
-    CATS['${cat.id}'] = {id: '${cat.id}', name: '${cat.name}', icon: '${cat.icon}', sort: '${cat.sort}', status: '${cat.status}'};
-    </c:forEach>
+    // 编辑回填数据：服务端序列化为 JSON，避免把分类名/图标拼进 JS 字符串（存储型 XSS）
+    var CATS = ${categoriesJson};
     function openEdit(id) {
         if (id) {
             var c = CATS[id];

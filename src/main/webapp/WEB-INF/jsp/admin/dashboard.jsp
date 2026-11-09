@@ -40,7 +40,7 @@
             <c:otherwise>
                 <c:forEach items="${categoryStats}" var="cat" varStatus="st">
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-                        <span style="width:70px;color:#666;font-size:13px">${cat.name}</span>
+                        <span style="width:70px;color:#666;font-size:13px">${fn:escapeXml(cat.name)}</span>
                         <div style="flex:1;background:#f5f5f5;border-radius:6px;height:14px;overflow:hidden">
                             <div style="width:${cat.cnt * 100 / categoryStats[0].cnt}%;height:100%;
                                 background:linear-gradient(90deg,#6a5cff,#00c6a0)"></div>

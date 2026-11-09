@@ -2,10 +2,9 @@ package com.shop.web.admin;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shop.common.PageResult;
 import com.shop.common.Result;
+import com.shop.common.ScriptJson;
 import com.shop.common.WebUtil;
 import com.shop.dao.OrderItemMapper;
 import com.shop.dao.OrderMapper;
@@ -29,8 +28,6 @@ import java.util.Map;
 @Controller
 @RequestMapping("/admin")
 public class AdminOrderController {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Autowired
     private OrderMapper orderMapper;
@@ -84,16 +81,7 @@ public class AdminOrderController {
             d.put("items", items);
             detailMap.put(o.getOrderNo(), d);
         }
-        try {
-            // 额外转义 < > &，防止 JSON 字符串中出现 </script> 截断脚本块
-            String json = OBJECT_MAPPER.writeValueAsString(detailMap)
-                    .replace("<", "\\u003c")
-                    .replace(">", "\\u003e")
-                    .replace("&", "\\u0026");
-            model.addAttribute("ordersJson", json);
-        } catch (JsonProcessingException e) {
-            model.addAttribute("ordersJson", "{}");
-        }
+        model.addAttribute("ordersJson", ScriptJson.of(detailMap));
         model.addAttribute("status", status);
         model.addAttribute("orderNo", orderNo == null ? "" : orderNo);
         return "admin/orders";

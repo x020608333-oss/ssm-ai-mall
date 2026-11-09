@@ -8,11 +8,11 @@
 <jsp:include page="common/header.jsp"/>
 
 <div class="toolbar">
-    <input id="kw" type="text" placeholder="搜索商品名称" value="${keyword}" style="width:220px">
+    <input id="kw" type="text" placeholder="搜索商品名称" value="${fn:escapeXml(keyword)}" style="width:220px">
     <select id="catSel">
         <option value="">全部分类</option>
         <c:forEach items="${categories}" var="cat">
-            <option value="${cat.id}" ${categoryId == cat.id ? 'selected' : ''}>${cat.icon} ${cat.name}</option>
+            <option value="${cat.id}" ${categoryId == cat.id ? 'selected' : ''}>${fn:escapeXml(cat.icon)} ${fn:escapeXml(cat.name)}</option>
         </c:forEach>
     </select>
     <button class="btn btn-primary" onclick="search()">查询</button>
@@ -32,12 +32,12 @@
     <c:forEach items="${result.list}" var="p">
         <tr>
             <td>${p.id}</td>
-            <td><img class="thumb" src="${ctx}${p.mainImage}" onerror="this.src='${ctx}/static/img/placeholder.jpg'"></td>
+            <td><img class="thumb" src="${ctx}${fn:escapeXml(p.mainImage)}" onerror="this.src='${ctx}/static/img/placeholder.jpg'"></td>
             <td>
-                ${p.name}
+                ${fn:escapeXml(p.name)}
                 <c:if test="${p.isHot == 1}"><span class="tag tag-orange">热卖</span></c:if>
             </td>
-            <td>${p.categoryName}</td>
+            <td>${fn:escapeXml(p.categoryName)}</td>
             <td style="color:#ff5000;font-weight:700">¥${p.price}</td>
             <td>${p.stock}</td>
             <td>${p.sales}</td>
@@ -59,7 +59,7 @@
 
 <c:if test="${result.total > result.pageSize}">
     <div class="pagination">
-        <c:set var="base" value="${ctx}/admin/products?keyword=${keyword}&categoryId=${categoryId}&page="/>
+        <c:set var="base" value="${ctx}/admin/products?keyword=${fn:escapeXml(keyword)}&categoryId=${categoryId}&page="/>
         <c:if test="${result.pageNum > 1}"><a href="${base}${result.pageNum - 1}">‹ 上一页</a></c:if>
         <span class="cur">${result.pageNum} / ${result.pages}</span>
         <c:if test="${result.pageNum < result.pages}"><a href="${base}${result.pageNum + 1}">下一页 ›</a></c:if>
@@ -76,7 +76,7 @@
             <div class="form-item"><label>分类 *</label>
                 <select id="f_category">
                     <c:forEach items="${categories}" var="cat">
-                        <option value="${cat.id}">${cat.icon} ${cat.name}</option>
+                        <option value="${cat.id}">${fn:escapeXml(cat.icon)} ${fn:escapeXml(cat.name)}</option>
                     </c:forEach>
                 </select>
             </div>
@@ -109,15 +109,8 @@
 
 <jsp:include page="common/footer.jsp"/>
 <script>
-    // 保留商品数据供编辑回填
-    var PRODUCTS = {};
-    <c:forEach items="${result.list}" var="p">
-    PRODUCTS['${p.id}'] = {
-        id: '${p.id}', name: '${p.name}', categoryId: '${p.categoryId}', subtitle: '${p.subtitle}',
-        price: '${p.price}', stock: '${p.stock}', isHot: '${p.isHot}', status: '${p.status}',
-        mainImage: '${p.mainImage}', detail: '${p.detail}'
-    };
-    </c:forEach>
+    // 编辑回填数据：服务端序列化为 JSON，避免把商品名/详情拼进 JS 字符串（存储型 XSS）
+    var PRODUCTS = ${productsJson};
 
     function search() {
         var url = CTX + '/admin/products?page=1';
